@@ -1,0 +1,117 @@
+- hosts: all
+  tasks:
+  # upgrade
+  - name: upgrade
+    apt:
+      upgrade: safe
+      update_cache: true
+      cache_valid_time: 600
+    become: true
+
+  # ufw
+  - name: ufw
+    become: true
+    block:
+    - name: enable and start ufw
+      service:
+        name: ufw
+        state: started
+        enabled: true
+    - name: firewall 22
+      community.general.ufw:
+        rule: allow
+        port: 22
+    - name: firewall 80
+      community.general.ufw:
+        rule: allow
+        port: 80
+    - name: firewall 443
+      community.general.ufw:
+        rule: allow
+        port: 443
+    - name: default
+      community.general.ufw:
+        state: enabled
+        default: deny
+
+  # Proxy settings
+  - name: Proxy settings
+    # become: true
+    block:
+    - name: http_proxy
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: 'export http_proxy="http://proxy.uec.ac.jp:8080"'
+    - name: https_proxy
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: 'export https_proxy="http://proxy.uec.ac.jp:8080"'
+
+  # PostgreSQL
+  - name: Install PostgreSQL
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+      cache_valid_time: 600
+    vars:
+      packages:
+        - postgresql
+        - postgresql-contrib
+    become: true
+
+  # SQLite
+  - name: sqlite3
+    apt:
+      name: "{{ packages }}"
+      state: present
+      update_cache: true
+      cache_valid_time: 600
+    vars:
+      packages:
+        - sqlite3
+    become: true
+
+  # Python3
+  - name: Python3
+    block:
+    - name: Python3
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: true
+        cache_valid_time: 600
+      vars:
+        packages:
+          - python3-pip
+      become: true
+    - name: bashrc additional PATH
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: 'PATH="$PATH":/home/ubuntu/.local/bin'
+  - name: pip install matplotlib
+    ansible.builtin.command: pip install matplotlib
+    args:
+      creates: /home/ubuntu/.local/lib/python3.8/site-packages/matplotlib
+
+  # Django
+  - name: Django
+    become: true
+    block:
+    - name: firewall 3000
+      community.general.ufw:
+        rule: allow
+        port: 3000
+    - name: ensure reloaded
+      community.general.ufw:
+        state: enabled
+    - name: Django
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: true
+        cache_valid_time: 600
+      vars:
+        packages:
+          - python3-django
+          - tree
