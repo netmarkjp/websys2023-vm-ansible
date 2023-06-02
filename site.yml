@@ -88,7 +88,7 @@
     - name: bashrc additional PATH
       lineinfile:
         path: /home/ubuntu/.bashrc
-        line: 'PATH="$PATH":/home/ubuntu/.local/bin'
+        line: 'export PATH="$PATH":/home/ubuntu/.local/bin'
   - name: pip install matplotlib
     ansible.builtin.command: pip install matplotlib
     args:
